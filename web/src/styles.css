@@ -68,6 +68,11 @@ p { margin: 0; }
   color: #fff; display: flex; align-items: center; justify-content: center;
   font-size: 16px; font-weight: 700; box-shadow: var(--shadow-sm);
 }
+.brand-logo {
+  width: 32px; height: 32px; border-radius: 50%;
+  object-fit: cover; box-shadow: var(--shadow-sm);
+  flex: none;
+}
 .brand-name { font-weight: 700; font-size: 16.5px; letter-spacing: -0.02em; }
 .brand-name .accent { color: var(--muted); font-weight: 500; }
 .accent { color: var(--accent); }
@@ -161,7 +166,15 @@ p { margin: 0; }
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 26px; box-shadow: var(--shadow-lg);
 }
-.hero-card-head { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 13px; font-weight: 500; margin-bottom: 20px; }
+.hero-card-head { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; font-weight: 500; margin-bottom: 20px; }
+.hero-card-cat {
+  width: 46px; height: 46px; border-radius: 50%; object-fit: cover;
+  box-shadow: var(--shadow); animation: catBob 4.5s ease-in-out infinite;
+}
+@keyframes catBob {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-5px) rotate(3deg); }
+}
 .hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .stat { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 15px 16px; }
 .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
@@ -420,6 +433,32 @@ input[type="range"] { width: 100%; accent-color: #0a0a0a; }
   25% { transform: rotate(-10deg) scale(1.06); }
   75% { transform: rotate(10deg) scale(1.06); }
 }
+
+/* ── Creator claim bar ──────────────────────────────────── */
+.claim-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 18px; margin-top: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Bonding curve progress ─────────────────────────────── */
+.progress-box {
+  background: var(--bg-2); border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 14px;
+}
+.progress-bar {
+  height: 8px; background: #e4e1d9; border-radius: 999px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, #0a0a0a, #3a3a3f);
+  transition: width .4s ease;
+}
+.mini-progress { display: flex; align-items: center; gap: 8px; margin: 2px 0 12px; }
+.mini-progress-bar { flex: 1; height: 5px; background: #eceae3; border-radius: 999px; overflow: hidden; }
+.mini-progress-fill { height: 100%; border-radius: 999px; background: #0a0a0a; transition: width .4s ease; }
+.mini-progress-label { font-size: 11px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* ── Animations ─────────────────────────────────────────── */
 @keyframes fadeUp {

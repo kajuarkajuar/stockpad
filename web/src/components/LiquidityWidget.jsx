@@ -8,9 +8,9 @@ import MemePadRouterABI from "../abi/MemePadRouter.json";
 
 export default function LiquidityWidget({ coin, wallet }) {
   const { account, onRightChain, connect, switchChain } = wallet;
-  const { token, pair, stockToken, symbol } = coin;
+  const { token, pair, quote, symbol } = coin;
 
-  const stockTicker = Object.keys(STOCKS).find((t) => STOCKS[t].address.toLowerCase() === stockToken.toLowerCase()) || "STOCK";
+  const stockTicker = Object.keys(STOCKS).find((t) => STOCKS[t].address.toLowerCase() === quote.toLowerCase()) || "STOCK";
 
   const [tab, setTab] = useState("add");
   const [amountA, setAmountA] = useState(""); // coin
@@ -26,8 +26,8 @@ export default function LiquidityWidget({ coin, wallet }) {
     if (!account) return;
     readBalance(pair, account).then(setLpBal).catch(() => {});
     readBalance(token, account).then(setCoinBal).catch(() => {});
-    readBalance(stockToken, account).then(setStockBal).catch(() => {});
-  }, [account, pair, token, stockToken]);
+    readBalance(quote, account).then(setStockBal).catch(() => {});
+  }, [account, pair, token, quote]);
 
   const deadline = () => BigInt(Math.floor(Date.now() / 1000) + 600);
 
@@ -52,11 +52,11 @@ export default function LiquidityWidget({ coin, wallet }) {
     setBusy(true);
     try {
       await approve(token, CONTRACTS.router, a);
-      await approve(stockToken, CONTRACTS.router, b);
+      await approve(quote, CONTRACTS.router, b);
       setOk("Adding liquidity…");
       const hash = await wc.writeContract({
         address: CONTRACTS.router, abi: MemePadRouterABI, functionName: "addLiquidity",
-        args: [token, stockToken, a, b, (a * 95n) / 100n, (b * 95n) / 100n, account, deadline()], account,
+        args: [token, quote, a, b, (a * 95n) / 100n, (b * 95n) / 100n, account, deadline()], account,
       });
       await waitForReceipt(hash);
       setOk("Liquidity added ✓");
@@ -83,7 +83,7 @@ export default function LiquidityWidget({ coin, wallet }) {
       setOk("Removing liquidity…");
       const hash = await wc.writeContract({
         address: CONTRACTS.router, abi: MemePadRouterABI, functionName: "removeLiquidity",
-        args: [token, stockToken, liq, 0n, 0n, account, deadline()], account,
+        args: [token, quote, liq, 0n, 0n, account, deadline()], account,
       });
       await waitForReceipt(hash);
       setOk("Liquidity removed ✓");

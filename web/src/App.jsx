@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "./hooks/useWallet";
-import { fetchCoins, fetchCoin, readLaunchpad } from "./lib/client";
+import { fetchCoins, fetchCoin, readLaunchpad, claimCreatorFees, waitForReceipt } from "./lib/client";
 import { isDeployed, CONTRACTS } from "./config/addresses";
 import { STOCKS } from "./config/stocks";
-import { fmtBig, priceOf, shortAddr, timeAgo, explorerUrl } from "./lib/format";
+import { fmtBig, shortAddr, timeAgo, explorerUrl } from "./lib/format";
 import { trendOf } from "./lib/sparkline";
 import { DEFAULT_CHAIN } from "./config/chain";
 
@@ -17,6 +17,7 @@ import MemeFloat from "./components/MemeFloat";
 import MemeTicker from "./components/MemeTicker";
 import EmojiRain from "./components/EmojiRain";
 import { randomMeme } from "./lib/memes";
+import mascot from "./assets/mascot.png";
 
 function useRoute() {
   const [hash, setHash] = useState(window.location.hash || "#/");
@@ -124,8 +125,8 @@ function Home({ wallet, navigate, onLaunch }) {
             ))}
           </h1>
           <p className="hero-sub">
-            Name your token, pick a Stock Token, and the entire supply is seeded into a
-            liquidity pool in one transaction. 100% fair launch — you keep the LP.
+            Name your token, pick a Stock Token, and it launches onto a bonding curve —
+            no liquidity needed. Price rises with every buy. Graduate and the LP burns forever.
           </p>
           <div className="hero-actions">
             <a className="btn btn-primary btn-lg" href="#/explore">Explore coins</a>
@@ -143,13 +144,17 @@ function Home({ wallet, navigate, onLaunch }) {
 
         <div className="hero-card">
           <div className="hero-card-head">
-            <span className="chain-dot" />
-            Live market
+            <img src={mascot} className="hero-card-cat" alt="MemePad cat mascot" />
+            <div>
+              <div style={{ fontWeight: 700, color: "var(--text)" }}>Meowket</div>
+              <div className="muted" style={{ fontSize: 12 }}>Live meme market</div>
+            </div>
+            <span className="badge-chip live" style={{ marginLeft: "auto" }}>LFG</span>
           </div>
           <div className="hero-stats">
             <Stat label="Coins launched" value={coins ? String(coins.length) : "…"} />
             <Stat label="Stock tokens" value={Object.keys(STOCKS).length} />
-            <Stat label="Swap fee" value="0.30%" />
+            <Stat label="Trading fee" value="1%" />
             <Stat label="Block time" value="~0.1s" />
           </div>
           <div className="hero-card-foot">
@@ -171,10 +176,10 @@ function Home({ wallet, navigate, onLaunch }) {
           <div className="why">
             <h2>How it works</h2>
             <ol className="steps">
-              <li><b>Create</b> — deploy a fresh ERC-20 with your name &amp; supply.</li>
-              <li><b>Seed</b> — it's paired with NVDA, AAPL, or any Stock Token you choose.</li>
-              <li><b>Own</b> — 100% of supply goes into the pool; you receive the LP tokens.</li>
-              <li><b>Trade</b> — anyone swaps the Stock Token ↔ your coin, 0.30% fee accrues to LP.</li>
+              <li><b>Launch</b> — pay a flat 0.0005 ETH fee; 1B supply goes onto a bonding curve. No LP, no pre-sale.</li>
+              <li><b>Earn</b> — you keep a share of every trade (1% fee split, set at launch).</li>
+              <li><b>Ape in</b> — every buy pumps the price; sell anytime. Dev buy is optional.</li>
+              <li><b>Graduate</b> — once the curve fills, trading moves to the AMM and the LP is burned.</li>
             </ol>
             <p className="muted">
               Built with Solidity (Hardhat) + React/viem. Auditable AMM, no pre-sale, no team allocation.
@@ -198,7 +203,7 @@ function Home({ wallet, navigate, onLaunch }) {
         ) : (
           <div className="grid">
             {featured.map((c) => (
-              <CoinCard key={c.id} coin={c} onOpen={(id) => navigate("#/coin/" + id)} />
+              <CoinCard key={c.index} coin={c} onOpen={(id) => navigate("#/coin/" + id)} />
             ))}
           </div>
         )}
@@ -229,7 +234,7 @@ function Explore({ wallet, navigate }) {
       ) : (
         <div className="grid">
           {coins.map((c) => (
-            <CoinCard key={c.id} coin={c} onOpen={(id) => navigate("#/coin/" + id)} />
+            <CoinCard key={c.index} coin={c} onOpen={(id) => navigate("#/coin/" + id)} />
           ))}
         </div>
       )}
@@ -241,28 +246,55 @@ function CoinDetail({ id, wallet, navigate }) {
   const [coin, setCoin] = useState(null);
   const [err, setErr] = useState("");
   const [tab, setTab] = useState("trade");
+  const [claiming, setClaiming] = useState(false);
+
+  const refresh = () => fetchCoin(id).then(setCoin).catch(() => {});
 
   useEffect(() => {
     setCoin(null);
-    fetchCoin(id).then(setCoin).catch((e) => setErr(e?.message || "Failed to load coin"));
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  async function claimFees() {
+    setErr("");
+    setClaiming(true);
+    try {
+      const h = await claimCreatorFees(Number(id), wallet.account);
+      await waitForReceipt(h);
+      await refresh();
+    } catch (e) {
+      setErr(e?.shortMessage || e?.message || "Claim failed");
+    } finally {
+      setClaiming(false);
+    }
+  }
 
   if (err) return <section className="section"><div className="alert error">{err}</div></section>;
   if (!coin) return <section className="section"><p className="muted">Loading coin…</p></section>;
 
-  const { token, pair, stockToken, creator, name, symbol, totalSupply, createdAt, state } = coin;
-  const stockTicker = Object.keys(STOCKS).find((t) => STOCKS[t].address.toLowerCase() === stockToken.toLowerCase()) || "STOCK";
-  const stockColor = STOCKS[stockTicker]?.color || "#888";
+  const {
+    token, pair, quote, creator, name, symbol, totalSupply, quoteDecimals,
+    realTokenReserve, realQuoteReserve, graduationTarget, createdAt,
+    graduated, price, mcap, progress, state,
+    creatorFeeBps, creatorAccrued,
+  } = coin;
 
-  let price = null, coinReserve = 0n, stockReserve = 0n;
-  if (state) {
+  const stockTicker = Object.keys(STOCKS).find((t) => STOCKS[t].address.toLowerCase() === quote.toLowerCase()) || "QUOTE";
+  const stockColor = STOCKS[stockTicker]?.color || "#888";
+  const trend = trendOf(token);
+  const pct = Math.min(100, Number((progress * 100n) / 10n ** 18n));
+  const isCreator = wallet.account && creator.toLowerCase() === wallet.account.toLowerCase();
+
+  // post-graduation price from AMM reserves
+  let ammPrice = null, coinReserve = 0n, quoteReserve = 0n;
+  if (graduated && state) {
     const coinIs0 = state.token0.toLowerCase() === token.toLowerCase();
     coinReserve = coinIs0 ? state.reserve0 : state.reserve1;
-    stockReserve = coinIs0 ? state.reserve1 : state.reserve0;
-    price = priceOf(coinReserve, stockReserve);
+    quoteReserve = coinIs0 ? state.reserve1 : state.reserve0;
+    if (coinReserve > 0n) ammPrice = (quoteReserve * 10n ** 18n) / coinReserve;
   }
-  const mcap = price ? (totalSupply * price) / 10n ** 18n : 0n;
-  const trend = trendOf(token);
+  const shownPrice = graduated ? ammPrice : price;
 
   return (
     <section className="section" style={{ marginTop: 24 }}>
@@ -274,13 +306,16 @@ function CoinDetail({ id, wallet, navigate }) {
             {symbol.slice(0, 1)}
           </div>
           <div>
-            <div className="detail-symbol">{symbol} <span className="unit">/ {stockTicker}</span></div>
+            <div className="detail-symbol">
+              {symbol} <span className="unit">/ {stockTicker}</span>
+              {graduated && <span className="badge-chip live">Graduated ✓</span>}
+            </div>
             <div className="coin-name">{name} · created by {shortAddr(creator)}</div>
           </div>
         </div>
         <div className="detail-price">
           <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "flex-end", flexWrap: "wrap" }}>
-            <span className="big-price">{price == null ? "–" : fmtBig(price, 18, 10)}</span>
+            <span className="big-price">{shownPrice == null ? "–" : fmtBig(shownPrice, 18, 10)}</span>
             <span className={"change-chip " + (trend.up ? "up" : "down")}>
               {trend.up ? "▲" : "▼"} {Math.abs(trend.pct)}%
             </span>
@@ -290,29 +325,58 @@ function CoinDetail({ id, wallet, navigate }) {
       </div>
 
       <div className="detail-chart">
+        {!graduated && (
+          <div className="progress-box" style={{ marginBottom: 14 }}>
+            <div className="field-row">
+              <span className="label">Bonding curve progress</span>
+              <span className="label">{pct}%</span>
+            </div>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{ width: pct + "%" }} />
+            </div>
+            <p className="muted" style={{ marginTop: 8, fontSize: 12 }}>
+              {fmtBig(realQuoteReserve, quoteDecimals, 2)} / {fmtBig(graduationTarget, quoteDecimals, 0)} {stockTicker} collected → graduates to AMM, LP burned.
+            </p>
+          </div>
+        )}
         <div className="detail-links" style={{ marginTop: 0, marginBottom: 14 }}>
           <a href={explorerUrl(DEFAULT_CHAIN, "address", token)} target="_blank" rel="noreferrer">Token ↗</a>
-          <a href={explorerUrl(DEFAULT_CHAIN, "address", pair)} target="_blank" rel="noreferrer">Pool ↗</a>
-          <span className="muted">Seeded {timeAgo(createdAt)}</span>
+          {graduated && pair && !/^0x0+$/.test(pair) && (
+            <a href={explorerUrl(DEFAULT_CHAIN, "address", pair)} target="_blank" rel="noreferrer">Pool ↗</a>
+          )}
+          <span className="muted">Launched {timeAgo(createdAt)}</span>
         </div>
         <Sparkline address={token} width={1000} height={170} />
       </div>
 
       <div className="detail-stats">
-        <div className="dstat"><span className="label">Market cap</span><span className="value">{price == null ? "–" : fmtBig(mcap, 18, 2)} {stockTicker}</span></div>
-        <div className="dstat"><span className="label">Total supply</span><span className="value">{fmtBig(totalSupply, 18, 2)} {symbol}</span></div>
-        <div className="dstat"><span className="label">Pool {symbol}</span><span className="value">{fmtBig(coinReserve, 18, 2)}</span></div>
-        <div className="dstat"><span className="label">Pool {stockTicker}</span><span className="value">{fmtBig(stockReserve, 18, 2)}</span></div>
+        <div className="dstat"><span className="label">FDV</span><span className="value">{graduated ? "—" : fmtBig(mcap, quoteDecimals, 2)} {stockTicker}</span></div>
+        <div className="dstat"><span className="label">Total supply</span><span className="value">{fmtBig(totalSupply, 18, 0)} {symbol}</span></div>
+        <div className="dstat"><span className="label">Creator fee share</span><span className="value">{Number(creatorFeeBps) / 100}% of fee</span></div>
+        <div className="dstat"><span className="label">{graduated ? "Pool " + stockTicker : "Collected"}</span><span className="value">{graduated ? fmtBig(quoteReserve, 18, 2) : fmtBig(realQuoteReserve, quoteDecimals, 2)} {stockTicker}</span></div>
       </div>
+
+      {isCreator && creatorAccrued > 0n && (
+        <div className="claim-bar">
+          <span className="muted">Earned: {fmtBig(creatorAccrued, quoteDecimals, 4)} {stockTicker}</span>
+          <button className="btn btn-primary" onClick={claimFees} disabled={claiming}>
+            {claiming ? "Claiming…" : "Claim fees"}
+          </button>
+        </div>
+      )}
 
       <div className="detail-grid">
         <div className="seg">
           <button className={"seg-btn" + (tab === "trade" ? " active" : "")} onClick={() => setTab("trade")}>Trade</button>
-          <button className={"seg-btn" + (tab === "lp" ? " active" : "")} onClick={() => setTab("lp")}>Liquidity</button>
+          {graduated && (
+            <button className={"seg-btn" + (tab === "lp" ? " active" : "")} onClick={() => setTab("lp")}>Liquidity</button>
+          )}
         </div>
         {tab === "trade"
           ? <TradeWidget coin={coin} wallet={wallet} />
-          : <LiquidityWidget coin={coin} wallet={wallet} />}
+          : graduated
+            ? <LiquidityWidget coin={coin} wallet={wallet} />
+            : null}
       </div>
     </section>
   );

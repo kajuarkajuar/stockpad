@@ -5,10 +5,12 @@ like **NVDA, AAPL, TSLA, MSFT, SPY** in a single transaction — a full-stack dA
 on **Robinhood Chain** (Ethereum L2 on the Arbitrum Orbit/Nitro stack, chainId 4663, gas = ETH).
 
 ```
-Create coin → 100% of supply goes straight into the pool → creator receives the LP tokens
+Pay a flat 0.0005 ETH fee → 1B supply mints onto a bonding curve → trades run on the
+curve at 1% fee → at the target it graduates to an AMM and the LP is burned forever.
 ```
 
-> No pre-sale, no team allocation — a truly fair launch.
+> pons.family-style economics: no pre-sale, no team allocation, no forced dev buy.
+> The creator earns a configurable share of every trade (fee split fixed at launch).
 
 ---
 
@@ -22,7 +24,7 @@ memepad/
 │   │   ├── TokenFactory.sol       # CREATE2 coin deployer (callable by the launchpad only)
 │   │   ├── StockPair.sol          # Constant-product AMM (Uniswap V2 style, 0.30% fee)
 │   │   ├── StockPairFactory.sol   # Deterministic pool deployer
-│   │   ├── Launchpad.sol          # Orchestrates: create coin + seed LP + return LP to creator
+│   │   ├── Launchpad.sol          # Bonding curve + graduation + ETH launch fee + creator fee share
 │   │   ├── MemePadRouter.sol     # Swap / add / remove liquidity in one transaction
 │   │   ├── SyntheticStock.sol     # (optional) Collateral-backed synthetic pegged to a Chainlink feed
 │   │   └── mocks/                 # MockStockToken, MockUSDC, MockPriceFeed
@@ -42,7 +44,7 @@ memepad/
 
 | Contract | Purpose |
 |---|---|
-| `Launchpad` | `createCoin(name, symbol, totalSupply, stockToken, stockAmount)` — deploys the coin, creates the pool, seeds liquidity, and mints LP to the creator |
+| `Launchpad` | `launch(name, symbol, quote, seed, target, creatorFeeBps)` — mints a 1B coin onto a bonding curve for a flat 0.0005 ETH fee; `buy`/`sell` at 1% fee (creator split); auto-graduates to the AMM and burns the LP |
 | `MemeToken` | Plain ERC-20; owner = creator (can mint more, capped at 1B; can burn) |
 | `StockPair` | The LP token is the pool itself; 0.30% fee accrues to LPs; reentrancy-guarded |
 | `MemePadRouter` | `swapExactTokensForTokens`, `addLiquidity`, `removeLiquidity` (single-hop) |
@@ -96,8 +98,8 @@ npm run dev             # http://localhost:5173
 ## End-user flow
 
 1. **Connect wallet** → switch to Robinhood Chain (one-click button).
-2. **Fill the form** — name / ticker / supply + pick a stock (NVDA…) + the stock amount to seed.
-3. **Create coin** → approve the stock token → coin + LP are created in a single transaction.
+2. **Fill the form** — name / ticker, pick a Stock Token (NVDA…), set your creator fee share, optional dev buy.
+3. **Launch** → pay the 0.0005 ETH fee → the 1B coin starts trading on its bonding curve immediately.
 4. The coin appears on the Explore page → anyone can trade (Stock Token ↔ coin) or add more liquidity.
 
 ## ⚠️ Before going to production

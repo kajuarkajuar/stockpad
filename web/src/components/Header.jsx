@@ -1,5 +1,6 @@
 import { DEFAULT_CHAIN } from "../config/chain";
 import { shortAddr } from "../lib/format";
+import logo from "../assets/logo.png";
 
 export default function Header({ wallet, onNavigate, onMeme }) {
   const { account, chainId, installed, connect, switchChain, onRightChain } = wallet;
@@ -8,7 +9,7 @@ export default function Header({ wallet, onNavigate, onMeme }) {
     <header className="header">
       <div className="header-inner">
         <div className="brand" onClick={() => onNavigate("#/")}>
-          <span className="brand-mark">⬡</span>
+          <img src={logo} className="brand-logo" alt="MemePad" />
           <span className="brand-name">
             Meme<span className="accent">Pad</span>
           </span>
