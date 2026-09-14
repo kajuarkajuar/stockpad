@@ -12,8 +12,9 @@ import {StockPair} from "./StockPair.sol";
 
 /// @title Launchpad (pons.family-style economics on a bonding curve)
 /// @notice Fair-launch flow:
-///         1. creator pays a flat launch fee in ETH (default 0.0005 ETH) and picks
-///            a quote token (e.g. NVDA Stock Token);
+///         1. creator pays a flat launch fee in ETH (default 0.0005 ETH), picks a
+///            quote token (e.g. NVDA Stock Token) and sets token metadata
+///            (description, image, twitter, telegram, website — locked at launch);
 ///         2. a 1B-supply coin is minted onto a constant-product bonding curve —
 ///            no upfront liquidity, no team allocation, no pre-sale;
 ///         3. anyone buys/sells on the curve (1% fee each side). A configurable
@@ -21,8 +22,8 @@ import {StockPair} from "./StockPair.sol";
 ///         4. once the curve collects the graduation target in quote tokens, the
 ///            remaining supply + collected quote migrate to an AMM pool and the
 ///            LP is burned (liquidity locked forever).
-///         An optional dev buy lets the creator (or anyone) buy in the same tx —
-///         there is never a free allocation.
+///         An optional dev buy lets the creator buy in the same tx — there is
+///         never a free allocation.
 contract Launchpad is Ownable, ReentrancyGuard {
     uint256 public constant TOTAL_SUPPLY = 1_000_000_000e18; // 1B, fixed
     uint256 public constant VIRTUAL_TOKEN_RESERVE = 1_073_000_000e18; // curve math seed
@@ -35,6 +36,14 @@ contract Launchpad is Ownable, ReentrancyGuard {
     StockPairFactory public immutable pairFactory;
 
     uint256 public launchFee; // ETH (native), owner-configurable — pons-style flat fee
+
+    struct Meta {
+        string description;
+        string image; // https:// or ipfs:// URI
+        string twitter;
+        string telegram;
+        string website;
+    }
 
     struct Curve {
         address token;
@@ -54,6 +63,7 @@ contract Launchpad is Ownable, ReentrancyGuard {
         address pair; // AMM pool after graduation
         uint256 creatorFeeBps; // creator's share of the 1% trading fee (bps of the fee)
         uint256 creatorAccrued; // quote tokens owed to the creator
+        Meta meta; // token metadata, locked at launch
     }
 
     Curve[] public curves;
@@ -67,7 +77,12 @@ contract Launchpad is Ownable, ReentrancyGuard {
         string name,
         string symbol,
         uint256 graduationTarget,
-        uint256 creatorFeeBps
+        uint256 creatorFeeBps,
+        string description,
+        string image,
+        string twitter,
+        string telegram,
+        string website
     );
     event Buy(uint256 indexed index, address indexed buyer, uint256 quoteIn, uint256 tokenOut, uint256 fee);
     event Sell(uint256 indexed index, address indexed seller, uint256 tokenIn, uint256 quoteOut, uint256 fee);
@@ -98,13 +113,15 @@ contract Launchpad is Ownable, ReentrancyGuard {
     /// @param seedQuote_        virtual quote reserve at launch (sets the initial price).
     /// @param graduationTarget_ quote units the curve must collect before graduating.
     /// @param creatorFeeBps_    creator's share of the 1% trading fee (0..10000 bps).
+    /// @param meta_             token metadata (description, image, socials).
     function launch(
         string calldata name_,
         string calldata symbol_,
         address quote_,
         uint256 seedQuote_,
         uint256 graduationTarget_,
-        uint256 creatorFeeBps_
+        uint256 creatorFeeBps_,
+        Meta calldata meta_
     ) external payable nonReentrant returns (uint256 index) {
         require(msg.value >= launchFee, "LP: insufficient fee");
         require(quote_ != address(0), "LP: zero quote");
@@ -135,12 +152,27 @@ contract Launchpad is Ownable, ReentrancyGuard {
                 graduated: false,
                 pair: address(0),
                 creatorFeeBps: creatorFeeBps_,
-                creatorAccrued: 0
+                creatorAccrued: 0,
+                meta: meta_
             })
         );
         curveIndexByToken[token] = index + 1;
 
-        emit Launched(index, token, quote_, msg.sender, name_, symbol_, graduationTarget_, creatorFeeBps_);
+        emit Launched(
+            index,
+            token,
+            quote_,
+            msg.sender,
+            name_,
+            symbol_,
+            graduationTarget_,
+            creatorFeeBps_,
+            meta_.description,
+            meta_.image,
+            meta_.twitter,
+            meta_.telegram,
+            meta_.website
+        );
     }
 
     // ── curve math (views) ──────────────────────────────────────────────────
@@ -149,6 +181,11 @@ contract Launchpad is Ownable, ReentrancyGuard {
         index = curveIndexByToken[token];
         require(index != 0, "LP: not a curve token");
         index -= 1;
+    }
+
+    /// @notice Token metadata, locked at launch.
+    function metadataOf(uint256 index) external view returns (Meta memory) {
+        return curves[index].meta;
     }
 
     /// @notice tokens out for a given quote input (fee applied).

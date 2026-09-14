@@ -47,10 +47,11 @@ async function readCurve(index) {
   const c = await publicClient.readContract({
     address: CONTRACTS.launchpad, abi: LaunchpadABI, functionName: "curves", args: [BigInt(index)],
   });
-  const [price, mcap, progress] = await Promise.all([
+  const [price, mcap, progress, meta] = await Promise.all([
     publicClient.readContract({ address: CONTRACTS.launchpad, abi: LaunchpadABI, functionName: "priceOf", args: [BigInt(index)] }),
     publicClient.readContract({ address: CONTRACTS.launchpad, abi: LaunchpadABI, functionName: "marketCapOf", args: [BigInt(index)] }),
     publicClient.readContract({ address: CONTRACTS.launchpad, abi: LaunchpadABI, functionName: "progressOf", args: [BigInt(index)] }),
+    publicClient.readContract({ address: CONTRACTS.launchpad, abi: LaunchpadABI, functionName: "metadataOf", args: [BigInt(index)] }).catch(() => null),
   ]);
 
   return {
@@ -61,6 +62,9 @@ async function readCurve(index) {
     graduationTarget: c[11], createdAt: c[12],
     graduated: c[13], pair: c[14],
     creatorFeeBps: c[15], creatorAccrued: c[16],
+    meta: meta
+      ? { description: meta[0] ?? "", image: meta[1] ?? "", twitter: meta[2] ?? "", telegram: meta[3] ?? "", website: meta[4] ?? "" }
+      : { description: "", image: "", twitter: "", telegram: "", website: "" },
     price, mcap, progress,
   };
 }

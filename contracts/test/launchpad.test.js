@@ -4,6 +4,8 @@ const { ethers } = require("hardhat");
 const E18 = (n) => ethers.parseEther(String(n));
 const B = (n) => E18(n * 1e9); // tokens (1B supply)
 
+const META = ["The coin that moons.", "ipfs://QmImage", "nvidiamoon", "nvidiamoon", "https://nvidiamoon.example"];
+
 describe("Launchpad — pons-style economics on a bonding curve", function () {
   let nvda, tokenFactory, pairFactory, launchpad, router, creator, trader, dead;
 
@@ -47,6 +49,7 @@ describe("Launchpad — pons-style economics on a bonding curve", function () {
       opts.seed || SEED,
       opts.target || TARGET,
       opts.feeBps ?? CREATOR_FEE_BPS,
+      opts.meta || META,
       { value: opts.value ?? LAUNCH_FEE }
     );
   }
@@ -54,14 +57,12 @@ describe("Launchpad — pons-style economics on a bonding curve", function () {
   it("charges the launch fee in ETH (0.0005 default)", async function () {
     expect(await launchpad.launchFee()).to.equal(LAUNCH_FEE);
 
-    // without the fee → reverts
     await expect(
       launchpad.connect(creator).launch(
-        "Moon Coin", "MOON", await nvda.getAddress(), SEED, TARGET, CREATOR_FEE_BPS
+        "Moon Coin", "MOON", await nvda.getAddress(), SEED, TARGET, CREATOR_FEE_BPS, META
       )
     ).to.be.revertedWith("LP: insufficient fee");
 
-    // with the fee → succeeds
     await expect(launch()).to.emit(launchpad, "Launched");
   });
 
@@ -88,6 +89,17 @@ describe("Launchpad — pons-style economics on a bonding curve", function () {
     expect(await launchpad.priceOf(0)).to.be.gt(0);
   });
 
+  it("stores token metadata (description, image, socials) locked at launch", async function () {
+    await launch();
+
+    const m = await launchpad.metadataOf(0);
+    expect(m.description).to.equal(META[0]);
+    expect(m.image).to.equal(META[1]);
+    expect(m.twitter).to.equal(META[2]);
+    expect(m.telegram).to.equal(META[3]);
+    expect(m.website).to.equal(META[4]);
+  });
+
   it("buying moves the price up and splits the 1% fee with the creator", async function () {
     await launch();
 
@@ -104,8 +116,6 @@ describe("Launchpad — pons-style economics on a bonding curve", function () {
 
     const c = await launchpad.curves(0);
     expect(c.realQuoteReserve).to.equal(E18(1) - fee);
-
-    // creator accrued 50% of the fee
     expect(c.creatorAccrued).to.equal((fee * CREATOR_FEE_BPS) / 10000n);
   });
 
@@ -122,7 +132,6 @@ describe("Launchpad — pons-style economics on a bonding curve", function () {
     await launchpad.connect(creator).claimFees(0);
     expect(await nvda.balanceOf(creator.address) - balBefore).to.equal(accrued);
 
-    // non-creator cannot claim
     await expect(launchpad.connect(trader).claimFees(0)).to.be.revertedWith("LP: not creator");
   });
 

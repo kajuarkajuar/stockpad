@@ -1,10 +1,10 @@
 import { STOCKS } from "../config/stocks";
-import { fmtBig, timeAgo, shortAddr } from "../lib/format";
+import { fmtBig, timeAgo, shortAddr, ipfsHttp } from "../lib/format";
 import { trendOf } from "../lib/sparkline";
 import Sparkline from "./Sparkline";
 
 export default function CoinCard({ coin, onOpen }) {
-  const { token, quote, creator, name, symbol, quoteDecimals, createdAt, graduated, price, mcap, progress } = coin;
+  const { token, quote, creator, name, symbol, quoteDecimals, createdAt, graduated, price, mcap, progress, meta } = coin;
 
   const stockTicker = Object.keys(STOCKS).find((t) => STOCKS[t].address.toLowerCase() === quote.toLowerCase()) || "QUOTE";
   const stockColor = STOCKS[stockTicker]?.color || "#888";
@@ -12,13 +12,23 @@ export default function CoinCard({ coin, onOpen }) {
   const trend = trendOf(token);
   const isNew = Date.now() / 1000 - Number(createdAt) < 60 * 60 * 24; // < 24h
   const pct = Math.min(100, Number((progress * 100n) / 10n ** 18n));
+  const img = meta?.image ? ipfsHttp(meta.image) : null;
 
   return (
     <div className="coin-card" onClick={() => onOpen(coin.index)}>
       <div className="coin-card-top">
         <div className="coin-ident">
           <div className="coin-logo" style={{ background: `linear-gradient(145deg, ${stockColor}, ${stockColor}cc)` }}>
-            {symbol.slice(0, 1)}
+            {img ? (
+              <img
+                src={img}
+                alt=""
+                className="coin-logo-img"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            ) : (
+              symbol.slice(0, 1)
+            )}
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>

@@ -3,7 +3,7 @@ import { useWallet } from "./hooks/useWallet";
 import { fetchCoins, fetchCoin, readLaunchpad, claimCreatorFees, waitForReceipt } from "./lib/client";
 import { isDeployed, CONTRACTS } from "./config/addresses";
 import { STOCKS } from "./config/stocks";
-import { fmtBig, shortAddr, timeAgo, explorerUrl } from "./lib/format";
+import { fmtBig, shortAddr, timeAgo, explorerUrl, socialHref, ipfsHttp } from "./lib/format";
 import { trendOf } from "./lib/sparkline";
 import { DEFAULT_CHAIN } from "./config/chain";
 
@@ -75,7 +75,7 @@ export default function App() {
         <div><b>MemePad</b> — launch coins paired with Robinhood Chain Stock Tokens. DYOR. Not financial advice.</div>
         <div>
           {isDeployed()
-            ? `Launchpad ${shortAddr(CONTRACTS.launchpad)} · Robinhood Chain (4663)`
+            ? `Launchpad ${shortAddr(CONTRACTS.launchpad)} · ${DEFAULT_CHAIN.name} (${DEFAULT_CHAIN.id})`
             : "Contracts not deployed yet — see web/src/config/addresses.js"}
         </div>
       </footer>
@@ -92,7 +92,7 @@ function Stat({ label, value }) {
   );
 }
 
-const FEATURED_TICKS = ["NVDA", "AAPL", "TSLA", "MSFT", "SPY"];
+const FEATURED_TICKS = Object.keys(STOCKS).slice(0, 5);
 
 function Home({ wallet, navigate, onLaunch }) {
   const [coins, setCoins] = useState(null);
@@ -110,7 +110,7 @@ function Home({ wallet, navigate, onLaunch }) {
       <section className="hero">
         <div className="hero-copy">
           <span className="badge">
-            <span className="chain-dot" /> Robinhood Chain · chainId 4663
+            <span className="chain-dot" /> {DEFAULT_CHAIN.name} · chainId {DEFAULT_CHAIN.id}
           </span>
           <h1>
             Launch a coin.
@@ -277,7 +277,7 @@ function CoinDetail({ id, wallet, navigate }) {
     token, pair, quote, creator, name, symbol, totalSupply, quoteDecimals,
     realTokenReserve, realQuoteReserve, graduationTarget, createdAt,
     graduated, price, mcap, progress, state,
-    creatorFeeBps, creatorAccrued,
+    creatorFeeBps, creatorAccrued, meta,
   } = coin;
 
   const stockTicker = Object.keys(STOCKS).find((t) => STOCKS[t].address.toLowerCase() === quote.toLowerCase()) || "QUOTE";
@@ -285,6 +285,10 @@ function CoinDetail({ id, wallet, navigate }) {
   const trend = trendOf(token);
   const pct = Math.min(100, Number((progress * 100n) / 10n ** 18n));
   const isCreator = wallet.account && creator.toLowerCase() === wallet.account.toLowerCase();
+  const metaImg = meta?.image ? ipfsHttp(meta.image) : null;
+  const tw = socialHref("twitter", meta?.twitter);
+  const tg = socialHref("telegram", meta?.telegram);
+  const web = socialHref("website", meta?.website);
 
   // post-graduation price from AMM reserves
   let ammPrice = null, coinReserve = 0n, quoteReserve = 0n;
@@ -303,7 +307,16 @@ function CoinDetail({ id, wallet, navigate }) {
       <div className="detail-head">
         <div className="coin-ident big">
           <div className="coin-logo lg" style={{ background: `linear-gradient(145deg, ${stockColor}, ${stockColor}cc)` }}>
-            {symbol.slice(0, 1)}
+            {metaImg ? (
+              <img
+                src={metaImg}
+                alt=""
+                className="coin-logo-img"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            ) : (
+              symbol.slice(0, 1)
+            )}
           </div>
           <div>
             <div className="detail-symbol">
@@ -311,6 +324,13 @@ function CoinDetail({ id, wallet, navigate }) {
               {graduated && <span className="badge-chip live">Graduated ✓</span>}
             </div>
             <div className="coin-name">{name} · created by {shortAddr(creator)}</div>
+            {(tw || tg || web) && (
+              <div className="social-row">
+                {tw && <a href={tw} target="_blank" rel="noreferrer" className="social-link">𝕏 Twitter</a>}
+                {tg && <a href={tg} target="_blank" rel="noreferrer" className="social-link">✈ Telegram</a>}
+                {web && <a href={web} target="_blank" rel="noreferrer" className="social-link">🌐 Website</a>}
+              </div>
+            )}
           </div>
         </div>
         <div className="detail-price">
@@ -323,6 +343,10 @@ function CoinDetail({ id, wallet, navigate }) {
           <span className="unit">{stockTicker} per {symbol}</span>
         </div>
       </div>
+
+      {meta?.description && (
+        <div className="meta-desc">{meta.description}</div>
+      )}
 
       <div className="detail-chart">
         {!graduated && (

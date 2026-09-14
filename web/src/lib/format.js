@@ -39,3 +39,20 @@ export function explorerUrl(chain, type, value) {
   const base = chain?.blockExplorers?.default?.url || "https://robinhoodchain.blockscout.com";
   return `${base}/${type}/${value}`;
 }
+
+export function socialHref(kind, v) {
+  if (!v) return null;
+  v = v.trim();
+  if (!v) return null;
+  if (kind === "website") return /^https?:\/\//i.test(v) ? v : "https://" + v;
+  if (kind === "twitter") return /^https?:\/\//i.test(v) ? v : "https://x.com/" + v.replace(/^@/, "");
+  if (kind === "telegram") return /^https?:\/\//i.test(v) ? v : "https://t.me/" + v.replace(/^@/, "");
+  return null;
+}
+
+export function ipfsHttp(uri) {
+  if (!uri) return null;
+  const s = uri.trim();
+  if (s.startsWith("ipfs://")) return "https://ipfs.io/ipfs/" + s.slice(7);
+  return s;
+}

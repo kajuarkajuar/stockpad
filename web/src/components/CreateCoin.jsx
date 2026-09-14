@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { erc20Abi, parseUnits } from "viem";
 import { CONTRACTS, isDeployed } from "../config/addresses";
 import { STOCKS, STOCK_TICKERS } from "../config/stocks";
-import { publicClient, readLaunchpad, readDecimals, curveDefaults, walletClient, waitForReceipt, MAX_UINT, TOTAL_SUPPLY, FEE_BPS } from "../lib/client";
-import { fmtBig } from "../lib/format";
+import { publicClient, readLaunchpad, walletClient, waitForReceipt, MAX_UINT, TOTAL_SUPPLY, FEE_BPS } from "../lib/client";
+import { fmtBig, ipfsHttp } from "../lib/format";
 import LaunchpadABI from "../abi/Launchpad.json";
 
 export default function CreateCoin({ wallet, onCreated }) {
@@ -14,25 +14,37 @@ export default function CreateCoin({ wallet, onCreated }) {
   const [ticker, setTicker] = useState("NVDA");
   const [devBuy, setDevBuy] = useState("");
   const [creatorShare, setCreatorShare] = useState(50); // % of the 1% fee
+
+  // metadata (pons-style)
+  const [description, setDescription] = useState("");
+  const [image, setImage] = useState("");
+  const [twitter, setTwitter] = useState("");
+  const [telegram, setTelegram] = useState("");
+  const [website, setWebsite] = useState("");
+
   const [fee, setFee] = useState(0n);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("");
   const [err, setErr] = useState("");
   const [txHash, setTxHash] = useState("");
+  const [imgErr, setImgErr] = useState(false);
 
   useEffect(() => {
     readLaunchpad().then((l) => setFee(l.fee)).catch(() => {});
   }, []);
 
   const stock = STOCKS[ticker];
-  const seed = 1n * 10n ** 18n; // stock tokens are 18 decimals
-  const target = 100n * 10n ** 18n; // graduate at 100 [ticker]
+  const seed = 1n * 10n ** 18n; // 1 [ticker] virtual seed
+  // Testnet faucet gives ~5 stock tokens/day, so keep the target low (10).
+  // Raise for mainnet (e.g. 100).
+  const target = 10n * 10n ** 18n; // graduate at 10 [ticker] collected
 
   const devBuyRaw = useMemo(() => {
     try { return parseUnits(devBuy || "0", 18); } catch { return 0n; }
   }, [devBuy]);
 
   const creatorFeeBps = BigInt(Math.round(creatorShare * 100)); // % → bps of the fee
+  const imagePreview = image.trim() ? ipfsHttp(image.trim()) : null;
 
   async function handleCreate() {
     setErr("");
@@ -41,14 +53,15 @@ export default function CreateCoin({ wallet, onCreated }) {
     if (!isDeployed()) { setErr("Contracts not deployed yet — paste your addresses in src/config/addresses.js"); return; }
     if (!name.trim() || !symbol.trim()) { setErr("Name and symbol are required"); return; }
 
+    const meta = [description.trim(), image.trim(), twitter.trim(), telegram.trim(), website.trim()];
+
     const wc = walletClient();
     setBusy(true);
     try {
-      // 1. launch the coin onto its bonding curve (flat ETH fee, pons-style)
       setStep("Launching on the curve…");
       const hash = await wc.writeContract({
         address: CONTRACTS.launchpad, abi: LaunchpadABI, functionName: "launch",
-        args: [name.trim(), symbol.trim().toUpperCase(), stock.address, seed, target, creatorFeeBps],
+        args: [name.trim(), symbol.trim().toUpperCase(), stock.address, seed, target, creatorFeeBps, meta],
         value: fee, account,
       });
       setTxHash(hash);
@@ -57,7 +70,6 @@ export default function CreateCoin({ wallet, onCreated }) {
       const countBefore = await readLaunchpad().then((l) => Number(l.count));
       const newIndex = Math.max(0, countBefore - 1);
 
-      // 2. optional dev buy (same as pons — buy in before anyone else)
       if (devBuyRaw > 0n) {
         setStep("Dev buy: " + ticker + "…");
         const allowance = await publicClient.readContract({
@@ -121,6 +133,53 @@ export default function CreateCoin({ wallet, onCreated }) {
               {t}
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="field">
+        <label>Description</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="What's the story? (shown on the coin page)"
+          maxLength={280}
+          rows={2}
+        />
+      </div>
+
+      <div className="field">
+        <label>Image (URL or ipfs://)</label>
+        <div className="image-pick">
+          <div className="img-preview">
+            {imagePreview && !imgErr ? (
+              <img src={imagePreview} alt="" onError={() => setImgErr(true)} />
+            ) : (
+              <span className="img-fallback">{symbol.slice(0, 1) || "?"}</span>
+            )}
+          </div>
+          <input
+            value={image}
+            onChange={(e) => { setImage(e.target.value); setImgErr(false); }}
+            placeholder="https://… or ipfs://…"
+          />
+        </div>
+        <p className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+          Upload to IPFS and paste the link, or use any image URL. Locked at launch.
+        </p>
+      </div>
+
+      <div className="field-grid">
+        <div className="field">
+          <label>Twitter / X</label>
+          <input value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="handle or URL" maxLength={120} />
+        </div>
+        <div className="field">
+          <label>Telegram</label>
+          <input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="handle or URL" maxLength={120} />
+        </div>
+        <div className="field">
+          <label>Website</label>
+          <input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://…" maxLength={160} />
         </div>
       </div>
 

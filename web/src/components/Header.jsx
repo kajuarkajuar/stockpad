@@ -43,7 +43,7 @@ export default function Header({ wallet, onNavigate, onMeme }) {
           ) : (
             <div className="account-pill">
               <span className="chain-dot" />
-              <span>Robinhood Chain</span>
+              <span>{DEFAULT_CHAIN.name}</span>
               <span className="addr">{shortAddr(account)}</span>
             </div>
           )}
