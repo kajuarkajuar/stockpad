@@ -42,7 +42,8 @@ body {
 ::selection { background: rgba(0, 113, 227, 0.16); }
 
 .app { min-height: 100vh; display: flex; flex-direction: column; }
-.main { flex: 1; width: 100%; max-width: 1140px; margin: 0 auto; padding: 28px 24px 80px; }
+.main { flex: 1; width: 100%; max-width: 1140px; margin: 0 auto; padding: 28px 24px 80px; position: relative; z-index: 2; }
+.footer { position: relative; z-index: 2; }
 
 a { color: var(--accent); text-decoration: none; }
 h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.03em; color: var(--text); }
@@ -328,6 +329,96 @@ input[type="range"] { width: 100%; accent-color: #0a0a0a; }
   border-top: 1px solid var(--border-soft); padding: 26px 24px;
   text-align: center; color: var(--muted); font-size: 12.5px; line-height: 1.8;
   background: var(--bg-2);
+}
+
+/* ── Meme layer (the fun / ปั่น stuff) ──────────────────── */
+.meme-float {
+  position: fixed; inset: 0; z-index: 1;
+  pointer-events: none; overflow: hidden;
+}
+.meme-float-item {
+  position: absolute; bottom: -12%;
+  will-change: transform;
+  animation: memeFloat linear infinite;
+  filter: saturate(1.15);
+  user-select: none;
+}
+@keyframes memeFloat {
+  0%   { transform: translate(0, 0) rotate(-14deg); }
+  25%  { transform: translate(var(--sway), -28vh) rotate(9deg); }
+  50%  { transform: translate(calc(var(--sway) * -0.6), -55vh) rotate(-11deg); }
+  75%  { transform: translate(var(--sway), -82vh) rotate(10deg); }
+  100% { transform: translate(0, -118vh) rotate(-8deg); }
+}
+
+/* marquee ticker under the header */
+.meme-ticker {
+  position: relative; z-index: 40;
+  background: #0a0a0a; color: #f6f4ef;
+  overflow: hidden; white-space: nowrap;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+.meme-ticker-track {
+  display: inline-flex; white-space: nowrap;
+  padding: 7px 0; font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em;
+  animation: marquee 42s linear infinite;
+}
+.meme-ticker-track span { padding-right: 48px; }
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* random meme toasts */
+.meme-toasts {
+  position: fixed; left: 20px; bottom: 20px; z-index: 120;
+  display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+}
+.meme-toast {
+  background: #0a0a0a; color: #f6f4ef;
+  padding: 11px 18px; border-radius: 980px; font-size: 13.5px; font-weight: 600;
+  box-shadow: var(--shadow-lg); max-width: 320px;
+  animation: toastIn .35s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(16px) scale(.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* emoji rain on coin launch */
+.emoji-rain {
+  position: fixed; inset: 0; z-index: 130;
+  pointer-events: none; overflow: hidden;
+}
+.emoji-rain span {
+  position: absolute; top: -12%;
+  animation: rainFall linear forwards;
+  user-select: none;
+}
+@keyframes rainFall {
+  0%   { transform: translateY(-6vh) rotate(0deg); opacity: 0; }
+  8%   { opacity: 1; }
+  100% { transform: translateY(120vh) rotate(360deg); opacity: .9; }
+}
+
+/* 🎲 meme button in the header */
+.meme-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--card);
+  cursor: pointer; font-size: 18px; display: inline-flex;
+  align-items: center; justify-content: center;
+  transition: transform .15s, box-shadow .2s;
+  box-shadow: var(--shadow-sm);
+}
+.meme-btn:hover { transform: rotate(15deg) scale(1.08); box-shadow: var(--shadow); }
+.meme-btn:active { transform: scale(.94); }
+
+/* playful wiggle on card logos */
+.coin-card:hover .coin-logo { animation: wiggle .5s ease; }
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-10deg) scale(1.06); }
+  75% { transform: rotate(10deg) scale(1.06); }
 }
 
 /* ── Animations ─────────────────────────────────────────── */

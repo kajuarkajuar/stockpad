@@ -13,6 +13,10 @@ import Sparkline from "./components/Sparkline";
 import CreateCoin from "./components/CreateCoin";
 import TradeWidget from "./components/TradeWidget";
 import LiquidityWidget from "./components/LiquidityWidget";
+import MemeFloat from "./components/MemeFloat";
+import MemeTicker from "./components/MemeTicker";
+import EmojiRain from "./components/EmojiRain";
+import { randomMeme } from "./lib/memes";
 
 function useRoute() {
   const [hash, setHash] = useState(window.location.hash || "#/");
@@ -32,6 +36,16 @@ export default function App() {
     window.location.hash = h;
   }, []);
 
+  // meme chaos
+  const [toasts, setToasts] = useState([]);
+  const [celebrate, setCelebrate] = useState(0);
+
+  const addMemeToast = useCallback(() => {
+    const t = { id: Date.now() + Math.random(), text: randomMeme() };
+    setToasts((ts) => [...ts.slice(-2), t]);
+    setTimeout(() => setToasts((ts) => ts.filter((x) => x.id !== t.id)), 4200);
+  }, []);
+
   let view;
   if (route.startsWith("#/coin/")) {
     const id = route.split("/")[2];
@@ -39,13 +53,23 @@ export default function App() {
   } else if (route.startsWith("#/explore")) {
     view = <Explore wallet={wallet} navigate={navigate} />;
   } else {
-    view = <Home wallet={wallet} navigate={navigate} />;
+    view = <Home wallet={wallet} navigate={navigate} onLaunch={() => setCelebrate((c) => c + 1)} />;
   }
 
   return (
     <div className="app">
-      <Header wallet={wallet} onNavigate={navigate} />
+      <MemeFloat />
+      <EmojiRain trigger={celebrate} />
+      <Header wallet={wallet} onNavigate={navigate} onMeme={addMemeToast} />
+      <MemeTicker />
       <main className="main">{view}</main>
+
+      <div className="meme-toasts">
+        {toasts.map((t) => (
+          <div key={t.id} className="meme-toast">{t.text}</div>
+        ))}
+      </div>
+
       <footer className="footer">
         <div><b>MemePad</b> — launch coins paired with Robinhood Chain Stock Tokens. DYOR. Not financial advice.</div>
         <div>
@@ -69,7 +93,7 @@ function Stat({ label, value }) {
 
 const FEATURED_TICKS = ["NVDA", "AAPL", "TSLA", "MSFT", "SPY"];
 
-function Home({ wallet, navigate }) {
+function Home({ wallet, navigate, onLaunch }) {
   const [coins, setCoins] = useState(null);
   const [count, setCount] = useState(0n);
 
@@ -137,7 +161,13 @@ function Home({ wallet, navigate }) {
 
       <section id="create" className="section">
         <div className="section-grid">
-          <CreateCoin wallet={wallet} onCreated={(id) => navigate("#/coin/" + id)} />
+          <CreateCoin
+            wallet={wallet}
+            onCreated={(id) => {
+              onLaunch();
+              navigate("#/coin/" + id);
+            }}
+          />
           <div className="why">
             <h2>How it works</h2>
             <ol className="steps">

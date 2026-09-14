@@ -1,7 +1,7 @@
 import { DEFAULT_CHAIN } from "../config/chain";
 import { shortAddr } from "../lib/format";
 
-export default function Header({ wallet, onNavigate }) {
+export default function Header({ wallet, onNavigate, onMeme }) {
   const { account, chainId, installed, connect, switchChain, onRightChain } = wallet;
 
   return (
@@ -28,6 +28,9 @@ export default function Header({ wallet, onNavigate }) {
         </nav>
 
         <div className="header-right">
+          <button className="meme-btn" onClick={onMeme} title="Random meme" aria-label="Random meme">
+            🎲
+          </button>
           {!account ? (
             <button className="btn btn-primary" onClick={connect} disabled={!installed}>
               {installed ? "Connect Wallet" : "Install Wallet"}
