@@ -29,3 +29,12 @@ export function sparklinePoints(address, n = 48) {
   }
   return pts;
 }
+
+// deterministic fake % move (matches the sparkline's first→last direction)
+export function trendOf(address) {
+  const pts = sparklinePoints(address);
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  const pct = ((last - first) / first) * 100;
+  return { pct: Math.round(pct * 10) / 10, up: pct >= 0 };
+}

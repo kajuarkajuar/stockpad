@@ -34,7 +34,7 @@ export default function Header({ wallet, onNavigate }) {
             </button>
           ) : !onRightChain ? (
             <button className="btn btn-warn" onClick={() => switchChain(DEFAULT_CHAIN)}>
-              Switch to Robinhood Chain
+              Switch Network
             </button>
           ) : (
             <div className="account-pill">

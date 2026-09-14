@@ -19,3 +19,6 @@ web/dist/
 *.log
 coverage/
 coverage.json
+
+# vercel
+.vercel/
