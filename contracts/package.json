@@ -1,0 +1,21 @@
+{
+  "name": "stockpad-contracts",
+  "version": "0.1.0",
+  "description": "StockPad - launchpad to create coins paired with Robinhood Chain Stock Tokens (NVDA/AAPL/TSLA...)",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network robinhood-testnet",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network robinhood"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@openzeppelin/contracts": "^5.1.0",
+    "chai": "^4.5.0",
+    "ethers": "^6.13.4",
+    "hardhat": "^2.22.17"
+  }
+}

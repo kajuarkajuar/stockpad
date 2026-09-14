@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+
+# hardhat build artifacts & cache
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+
+# build output
+web/dist/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# misc
+.DS_Store
+*.log
+coverage/
+coverage.json
