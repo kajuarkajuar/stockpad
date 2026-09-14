@@ -4,7 +4,7 @@ import { CONTRACTS, isDeployed } from "../config/addresses";
 import { STOCKS } from "../config/stocks";
 import { publicClient, quoteOut, readBalance, walletClient, waitForReceipt, MAX_UINT } from "../lib/client";
 import { fmtBig } from "../lib/format";
-import StockPadRouterABI from "../abi/StockPadRouter.json";
+import MemePadRouterABI from "../abi/MemePadRouter.json";
 
 export default function TradeWidget({ coin, wallet }) {
   const { account, onRightChain, connect, switchChain } = wallet;
@@ -68,7 +68,7 @@ export default function TradeWidget({ coin, wallet }) {
       setOk("Swapping…");
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
       const hash = await wc.writeContract({
-        address: CONTRACTS.router, abi: StockPadRouterABI, functionName: "swapExactTokensForTokens",
+        address: CONTRACTS.router, abi: MemePadRouterABI, functionName: "swapExactTokensForTokens",
         args: [amt, minOut, inputToken, outputToken, account, deadline], account,
       });
       await waitForReceipt(hash);

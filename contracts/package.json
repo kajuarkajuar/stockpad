@@ -1,7 +1,7 @@
 {
-  "name": "stockpad-contracts",
+  "name": "memepad-contracts",
   "version": "0.1.0",
-  "description": "StockPad - launchpad to create coins paired with Robinhood Chain Stock Tokens (NVDA/AAPL/TSLA...)",
+  "description": "MemePad - launchpad to create coins paired with Robinhood Chain Stock Tokens (NVDA/AAPL/TSLA...)",
   "private": true,
   "scripts": {
     "compile": "hardhat compile",

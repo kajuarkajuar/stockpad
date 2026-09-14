@@ -27,7 +27,7 @@ describe("Launchpad — create a coin paired with a Stock Token", function () {
 
     await tokenFactory.setLaunchpad(await launchpad.getAddress());
 
-    const Router = await ethers.getContractFactory("StockPadRouter");
+    const Router = await ethers.getContractFactory("MemePadRouter");
     router = await Router.deploy(await pairFactory.getAddress());
   });
 

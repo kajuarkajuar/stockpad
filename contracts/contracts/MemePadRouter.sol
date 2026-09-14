@@ -5,10 +5,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {StockPair} from "./StockPair.sol";
 import {StockPairFactory} from "./StockPairFactory.sol";
 
-/// @title StockPadRouter
+/// @title MemePadRouter
 /// @notice One-transaction helpers for adding/removing liquidity and swapping.
 ///         Paths are single-hop (token <-> Stock Token) in v1.
-contract StockPadRouter {
+contract MemePadRouter {
     address public immutable factory;
 
     constructor(address factory_) {

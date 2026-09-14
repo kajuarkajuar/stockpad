@@ -4,7 +4,7 @@ import { CONTRACTS, isDeployed } from "../config/addresses";
 import { STOCKS } from "../config/stocks";
 import { publicClient, readBalance, walletClient, waitForReceipt, MAX_UINT } from "../lib/client";
 import { fmtBig } from "../lib/format";
-import StockPadRouterABI from "../abi/StockPadRouter.json";
+import MemePadRouterABI from "../abi/MemePadRouter.json";
 
 export default function LiquidityWidget({ coin, wallet }) {
   const { account, onRightChain, connect, switchChain } = wallet;
@@ -55,7 +55,7 @@ export default function LiquidityWidget({ coin, wallet }) {
       await approve(stockToken, CONTRACTS.router, b);
       setOk("Adding liquidity…");
       const hash = await wc.writeContract({
-        address: CONTRACTS.router, abi: StockPadRouterABI, functionName: "addLiquidity",
+        address: CONTRACTS.router, abi: MemePadRouterABI, functionName: "addLiquidity",
         args: [token, stockToken, a, b, (a * 95n) / 100n, (b * 95n) / 100n, account, deadline()], account,
       });
       await waitForReceipt(hash);
@@ -82,7 +82,7 @@ export default function LiquidityWidget({ coin, wallet }) {
       await approve(pair, CONTRACTS.router, liq);
       setOk("Removing liquidity…");
       const hash = await wc.writeContract({
-        address: CONTRACTS.router, abi: StockPadRouterABI, functionName: "removeLiquidity",
+        address: CONTRACTS.router, abi: MemePadRouterABI, functionName: "removeLiquidity",
         args: [token, stockToken, liq, 0n, 0n, account, deadline()], account,
       });
       await waitForReceipt(hash);

@@ -10,7 +10,7 @@ export default function Header({ wallet, onNavigate }) {
         <div className="brand" onClick={() => onNavigate("#/")}>
           <span className="brand-mark">⬡</span>
           <span className="brand-name">
-            Stock<span className="accent">Pad</span>
+            Meme<span className="accent">Pad</span>
           </span>
         </div>
 

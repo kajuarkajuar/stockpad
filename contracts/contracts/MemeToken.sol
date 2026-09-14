@@ -5,7 +5,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title MemeToken
-/// @notice ERC-20 token minted by users through the StockPad launchpad.
+/// @notice ERC-20 token minted by users through the MemePad launchpad.
 ///         The creator owns the token (can mint more up to MAX_SUPPLY, set up
 ///         future tokenomics, etc.) while the initial supply is used for LP.
 contract MemeToken is ERC20, Ownable {

@@ -1,4 +1,4 @@
-// ─── StockPad contract addresses ────────────────────────────────────────────
+// ─── MemePad contract addresses ────────────────────────────────────────────
 // Deploy with:  cd ../contracts && npx hardhat run scripts/deploy.js --network robinhood
 // then paste the printed addresses here.
 export const CONTRACTS = {

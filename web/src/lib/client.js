@@ -4,7 +4,7 @@ import { CONTRACTS, isDeployed } from "../config/addresses";
 
 import LaunchpadABI from "../abi/Launchpad.json";
 import StockPairABI from "../abi/StockPair.json";
-import StockPadRouterABI from "../abi/StockPadRouter.json";
+
 
 export const publicClient = createPublicClient({
   chain: DEFAULT_CHAIN,

@@ -35,7 +35,7 @@ contract StockPair is ERC20, ReentrancyGuard {
         address indexed to
     );
 
-    constructor(address tokenA, address tokenB) ERC20("StockPad LP", "SP-LP") {
+    constructor(address tokenA, address tokenB) ERC20("MemePad LP", "MP-LP") {
         factory = msg.sender;
         (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
     }

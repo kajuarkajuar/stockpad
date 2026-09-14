@@ -1,5 +1,5 @@
-// StockPad deployment script
-// Deploys: TokenFactory -> StockPairFactory -> Launchpad -> StockPadRouter
+// MemePad deployment script
+// Deploys: TokenFactory -> StockPairFactory -> Launchpad -> MemePadRouter
 // (optional) SyntheticStock example (USDC-collateralized, Chainlink feed)
 //
 // Usage:
@@ -26,7 +26,7 @@ const STOCK_TOKENS = {
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const chainId = (await hre.ethers.provider.getNetwork()).chainId;
-  console.log(`Deploying StockPad on chainId ${chainId} from ${deployer.address}`);
+  console.log(`Deploying MemePad on chainId ${chainId} from ${deployer.address}`);
 
   const TokenFactory = await hre.ethers.getContractFactory("TokenFactory");
   const StockPairFactory = await hre.ethers.getContractFactory("StockPairFactory");
@@ -47,11 +47,11 @@ async function main() {
   // Wire the TokenFactory to the Launchpad (one-time).
   await tokenFactory.setLaunchpad(await launchpad.getAddress());
 
-  const Router = await hre.ethers.getContractFactory("StockPadRouter");
+  const Router = await hre.ethers.getContractFactory("MemePadRouter");
   const router = await Router.deploy(await pairFactory.getAddress());
   await router.waitForDeployment();
 
-  console.log("\n===== StockPad contracts =====");
+  console.log("\n===== MemePad contracts =====");
   console.log(`StockPairFactory : ${await pairFactory.getAddress()}`);
   console.log(`TokenFactory     : ${await tokenFactory.getAddress()}`);
   console.log(`Launchpad        : ${await launchpad.getAddress()}`);

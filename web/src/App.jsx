@@ -47,7 +47,7 @@ export default function App() {
       <Header wallet={wallet} onNavigate={navigate} />
       <main className="main">{view}</main>
       <footer className="footer">
-        <div><b>StockPad</b> — launch coins paired with Robinhood Chain Stock Tokens. DYOR. Not financial advice.</div>
+        <div><b>MemePad</b> — launch coins paired with Robinhood Chain Stock Tokens. DYOR. Not financial advice.</div>
         <div>
           {isDeployed()
             ? `Launchpad ${shortAddr(CONTRACTS.launchpad)} · Robinhood Chain (4663)`

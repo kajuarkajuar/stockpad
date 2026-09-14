@@ -1,4 +1,4 @@
-# StockPad 🟢
+# MemePad 🟢
 
 Create your own coin and pair it with **stock tokens** (Robinhood Chain Stock Tokens)
 like **NVDA, AAPL, TSLA, MSFT, SPY** in a single transaction — a full-stack dApp
@@ -15,7 +15,7 @@ Create coin → 100% of supply goes straight into the pool → creator receives 
 ## Project structure
 
 ```
-stockpad/
+memepad/
 ├── contracts/            # Solidity (Hardhat + OpenZeppelin)
 │   ├── contracts/
 │   │   ├── MemeToken.sol          # ERC-20 minted by the launchpad (owner = creator)
@@ -23,7 +23,7 @@ stockpad/
 │   │   ├── StockPair.sol          # Constant-product AMM (Uniswap V2 style, 0.30% fee)
 │   │   ├── StockPairFactory.sol   # Deterministic pool deployer
 │   │   ├── Launchpad.sol          # Orchestrates: create coin + seed LP + return LP to creator
-│   │   ├── StockPadRouter.sol     # Swap / add / remove liquidity in one transaction
+│   │   ├── MemePadRouter.sol     # Swap / add / remove liquidity in one transaction
 │   │   ├── SyntheticStock.sol     # (optional) Collateral-backed synthetic pegged to a Chainlink feed
 │   │   └── mocks/                 # MockStockToken, MockUSDC, MockPriceFeed
 │   ├── test/              # 8 tests, all passing (pair, launchpad, synthetic)
@@ -45,7 +45,7 @@ stockpad/
 | `Launchpad` | `createCoin(name, symbol, totalSupply, stockToken, stockAmount)` — deploys the coin, creates the pool, seeds liquidity, and mints LP to the creator |
 | `MemeToken` | Plain ERC-20; owner = creator (can mint more, capped at 1B; can burn) |
 | `StockPair` | The LP token is the pool itself; 0.30% fee accrues to LPs; reentrancy-guarded |
-| `StockPadRouter` | `swapExactTokensForTokens`, `addLiquidity`, `removeLiquidity` (single-hop) |
+| `MemePadRouter` | `swapExactTokensForTokens`, `addLiquidity`, `removeLiquidity` (single-hop) |
 | `SyntheticStock` | (optional) For tickers without a native on-chain Stock Token — a synthetic pegged to a Chainlink price, collateralized by USDC |
 
 ## Supported stock tokens (mainnet, chainId 4663)
